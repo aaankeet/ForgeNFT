@@ -1,0 +1,8 @@
+[profile.default]
+src = "src"
+out = "out"
+libs = ["/root/erc-1155/contracts/lib"]
+
+remappings = ["@oz=lib/openzeppelin-contracts"]
+
+# See more config options https://github.com/foundry-rs/foundry/tree/master/config
