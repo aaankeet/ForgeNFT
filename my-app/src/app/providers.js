@@ -46,8 +46,8 @@ export function Providers({ children }) {
 	return (
 		<WagmiConfig config={wagmiConfig}>
 			<RainbowKitProvider
-				theme={lightTheme({
-					accentColor: '#0E76FD',
+				theme={darkTheme({
+					accentColor: '#d49f63',
 					accentColorForeground: 'white',
 					borderRadius: 'small',
 					fontStack: 'rounded',

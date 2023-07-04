@@ -6,11 +6,7 @@ import wood from '../../public/wood.png';
 import stone from '../../public/stone.png';
 import iron from '../../public/iron.png';
 import gold from '../../public/gold.jpg';
-import {
-	useContractReads,
-	useContractWrite,
-	useWaitForTransaction,
-} from 'wagmi';
+import { useContractReads, useContractWrite, useContractRead } from 'wagmi';
 import { materialsAddress, materialsAbi } from './constants';
 import { ethers } from 'ethers';
 
@@ -19,6 +15,7 @@ const Mint = ({ address }) => {
 	const [currentIndex, setCurrentIndex] = useState(0);
 	const [quantity, setQuantity] = useState(1);
 	const [value, setValue] = useState(0.005);
+	const [userCooldown, setUserCooldown] = useState(0);
 
 	const rawMaterials = ['1. Wood', '2. Stone', '3. Iron', '4. Gold'];
 	const images = [wood, stone, iron, gold];
@@ -35,6 +32,22 @@ const Mint = ({ address }) => {
 	});
 
 	console.log(`Tx Data:`, mintData);
+
+	const { data: coolDown, isFetched: coolDownFetched } = useContractRead({
+		address: materialsAddress,
+		abi: materialsAbi,
+		functionName: 'userCooldown',
+		args: [address],
+	});
+
+	const currTime = new Date();
+	const unixTime = Math.floor(currTime.getTime() / 1000);
+
+	console.log(`Current Time`, unixTime);
+
+	const isCooldown = userCooldown.toString() + 86400 > unixTime;
+
+	console.log(isCooldown);
 
 	const { data: userBalance, isFetched } = useContractReads({
 		contracts: [
@@ -70,6 +83,16 @@ const Mint = ({ address }) => {
 
 	console.log('User Balance:', userBalance);
 
+	const {
+		isLoading: claimLoading,
+		isSuccess: claimSuccess,
+		write: claim,
+	} = useContractWrite({
+		address: materialsAddress,
+		abi: materialsAbi,
+		functionName: 'claimResources',
+	});
+
 	const handleQuantityChange = (e) => {
 		//set qunatity
 		setQuantity(e.target.value);
@@ -94,6 +117,7 @@ const Mint = ({ address }) => {
 	const isLastImage = currentIndex === images.length - 1;
 
 	useEffect(() => {
+		setUserCooldown(coolDown);
 		setRawMaterialId(currentIndex);
 		console.log(rawMaterialId);
 		console.log(address);
@@ -131,15 +155,17 @@ const Mint = ({ address }) => {
 					<AiFillRightCircle className='text-4xl text-white ' />
 				</button>
 			</div>
-			<div className='flex flex-col justify-center p-5'>
-				<input
-					type='number'
-					id='quantity'
-					name='quantity'
-					value={quantity}
-					onChange={handleQuantityChange}
-					className='mr-16 ml-16 text-xl border border-gray-300 rounded  text-gray-800 focus:outline-none focus:ring focus:border-blue-500'
-				></input>
+			<div className='flex flex-col justify-center p-3'>
+				<div className='flex justify-center'>
+					<input
+						type='number'
+						id='quantity'
+						name='quantity'
+						value={quantity}
+						onChange={handleQuantityChange}
+						className='mr-16 ml-16 text-xl border border-gray-300 rounded  text-gray-800 focus:outline-none focus:ring focus:border-blue-500'
+					></input>
+				</div>
 				<h2
 					className='text-xl  text-white text-center pt-2'
 					onChange={handleValueChange}
@@ -148,7 +174,7 @@ const Mint = ({ address }) => {
 				</h2>
 			</div>
 
-			<div className='flex justify-center pt-5'>
+			<div className='flex justify-center pt-4'>
 				{address ? (
 					<button
 						className='bg-red-400  rounded py-2 px-4 hover:bg-red-500 text-xl pl-5 pr-5'
@@ -173,16 +199,39 @@ const Mint = ({ address }) => {
 					</h1>
 				)}
 			</div>
+			<div className='flex flex-col justify-center p-3'>
+				<div className='flex justify-center'>
+					{address && (
+						<button
+							className='bg-blue-500  text-white px-8 py-2 rounded-md '
+							disabled={isCooldown}
+							onClick={() => claim()}
+						>
+							{claimLoading && 'Waiting for approval...'}
+							{claimSuccess && 'Claiming...'}
+							{!claimLoading &&
+								!claimSuccess &&
+								'Claim Resources'}
+						</button>
+					)}
+				</div>
+				{address && (
+					<p className='text-gray-500 text-lg pt-2 text-center'>
+						You can claim every 24 hours,
+						<br /> You will receive Random Material & Random amount.
+					</p>
+				)}
+			</div>
 
 			{address && userBalance && isFetched && (
-				<div className='flex justify-center p-10'>
+				<div className='flex justify-center pt-4'>
 					<table className='border-collapse  border-gray-300 '>
 						<tHead>
 							<tr>
-								<th className='text-white text-2xl px-5'>
+								<th className='text-zinc-400 text-2xl px-5'>
 									Raw Materials
 								</th>
-								<th className='text-white text-2xl  px-5'>
+								<th className='text-zinc-400 text-2xl  px-5'>
 									Your Balance
 								</th>
 							</tr>
@@ -190,10 +239,10 @@ const Mint = ({ address }) => {
 						<tbody>
 							{rawMaterials.map((m, index) => (
 								<tr key={index + 1}>
-									<td className='text-gray-200 text-xl px-5'>
+									<td className='text-gray-500 text-xl px-5'>
 										{m}
 									</td>
-									<td className='text-gray-200 text-xl px-5'>
+									<td className='text-gray-500 text-xl px-5'>
 										{userBalance[index].result.toString()}
 									</td>
 								</tr>
