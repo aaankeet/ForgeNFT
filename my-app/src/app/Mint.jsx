@@ -243,7 +243,7 @@ const Mint = ({ address }) => {
 										{m}
 									</td>
 									<td className='text-gray-500 text-xl px-5'>
-										{userBalance[index].result.toString()}
+										{userBalance[index]?.result.toString()}
 									</td>
 								</tr>
 							))}

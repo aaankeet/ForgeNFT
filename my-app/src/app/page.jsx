@@ -21,7 +21,7 @@ export default function Home() {
 				<Nav address={address} />
 				<section>
 					<h1
-						className='text-center text-4xl font-bold
+						className='text-center text-5xl font-bold
 					 bg-gradient-to-r from-yellow-200 to-pink-300 via-orange-200 
 					 text-transparent bg-clip-text py-2'
 					>
