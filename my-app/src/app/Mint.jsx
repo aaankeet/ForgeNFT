@@ -30,12 +30,18 @@ const Mint = ({ address }) => {
 		data: mintData,
 		isLoading: isMintLoading,
 		isSuccess: isMintStarted,
+		isIdle,
 		write: mintRawMaterial,
 	} = useContractWrite({
 		address: materialsAddress,
 		abi: materialsAbi,
 		functionName: 'mint',
 	});
+
+	const { isSuccess: txCompleted, isFetched: txFetched } =
+		useWaitForTransaction({
+			hash: mintData?.hash,
+		});
 
 	const { data: coolDown, isFetched: coolDownFetched } = useContractRead({
 		address: materialsAddress,
@@ -124,9 +130,9 @@ const Mint = ({ address }) => {
 	useEffect(() => {
 		setUserCooldown(coolDown);
 		setRawMaterialId(currentIndex);
-		console.log(rawMaterialId);
-		console.log(address);
-	}, [address, currentIndex, rawMaterialId, coolDown]);
+		console.log(`Raw Material Id:`, rawMaterialId);
+		console.log(`Connected User:`, address);
+	}, [address, currentIndex, rawMaterialId, coolDown, isMintLoading]);
 
 	return (
 		<div>
@@ -183,8 +189,9 @@ const Mint = ({ address }) => {
 			<div className='flex justify-center pt-4'>
 				{address ? (
 					<button
-						className='bg-red-400  rounded py-2 px-4 hover:bg-red-500 text-xl pl-5 pr-5'
-						disabled={isMintLoading || isMintStarted}
+						id='mintButton'
+						className='bg-red-500  rounded py-2 px-4 hover:bg-red-600 text-xl pl-5 pr-5'
+						disabled={isMintLoading}
 						onClick={() =>
 							mintRawMaterial({
 								args: [rawMaterialId, quantity],
@@ -195,9 +202,9 @@ const Mint = ({ address }) => {
 							})
 						}
 					>
-						{isMintLoading && 'Waiting for confirmation...'}
-						{isMintStarted && 'Minting...'}
-						{!isMintLoading && !isMintStarted && 'Mint'}
+						Mint
+						{txCompleted &&
+							alert(`NFT Minted!!! Tx Hash: ${mintData?.hash}`)}
 					</button>
 				) : (
 					<h1 className='text-red-600 text-xl  font-bold'>
