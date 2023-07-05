@@ -1,4 +1,5 @@
 'use client';
+
 import React, { useEffect, useState } from 'react';
 import { AiFillLeftCircle, AiFillRightCircle } from 'react-icons/ai';
 import Image from 'next/image';
@@ -6,7 +7,12 @@ import wood from '../../public/wood.png';
 import stone from '../../public/stone.png';
 import iron from '../../public/iron.png';
 import gold from '../../public/gold.jpg';
-import { useContractReads, useContractWrite, useContractRead } from 'wagmi';
+import {
+	useContractReads,
+	useContractWrite,
+	useContractRead,
+	useWaitForTransaction,
+} from 'wagmi';
 import { materialsAddress, materialsAbi } from './constants';
 import { ethers } from 'ethers';
 
@@ -31,8 +37,6 @@ const Mint = ({ address }) => {
 		functionName: 'mint',
 	});
 
-	console.log(`Tx Data:`, mintData);
-
 	const { data: coolDown, isFetched: coolDownFetched } = useContractRead({
 		address: materialsAddress,
 		abi: materialsAbi,
@@ -43,11 +47,10 @@ const Mint = ({ address }) => {
 	const currTime = new Date();
 	const unixTime = Math.floor(currTime.getTime() / 1000);
 
-	console.log(`Current Time`, unixTime);
-
 	const isCooldown = userCooldown.toString() + 86400 > unixTime;
 
-	console.log(isCooldown);
+	console.log(`Current Time`, unixTime);
+	console.log(`User Cooldown`, isCooldown);
 
 	const { data: userBalance, isFetched } = useContractReads({
 		contracts: [
@@ -94,7 +97,7 @@ const Mint = ({ address }) => {
 	});
 
 	const handleQuantityChange = (e) => {
-		//set qunatity
+		// set qunatity
 		setQuantity(e.target.value);
 	};
 	const handleValueChange = (e) => {
@@ -105,12 +108,14 @@ const Mint = ({ address }) => {
 		setCurrentIndex((prevIndex) =>
 			prevIndex === 0 ? images.length - 1 : prevIndex - 1
 		);
+		setRawMaterialId(currentIndex - 1);
 	};
 
 	const moveRight = () => {
 		setCurrentIndex((prevIndex) =>
 			prevIndex === images.length - 1 ? 0 : prevIndex + 1
 		);
+		setRawMaterialId(currentIndex + 1);
 	};
 
 	const isFirstImage = currentIndex === 0;
@@ -121,7 +126,7 @@ const Mint = ({ address }) => {
 		setRawMaterialId(currentIndex);
 		console.log(rawMaterialId);
 		console.log(address);
-	}, [currentIndex, setRawMaterialId]);
+	}, [address, currentIndex, rawMaterialId, coolDown]);
 
 	return (
 		<div>
@@ -138,6 +143,7 @@ const Mint = ({ address }) => {
 					{images.map((image, index) => (
 						<Image
 							key={index}
+							alt=''
 							src={image}
 							className={`rounded ${
 								index === currentIndex ? '' : 'hidden'

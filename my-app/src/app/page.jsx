@@ -1,15 +1,12 @@
 'use client';
-import Nav from './Nav.jsx';
+
 import Mint from './Mint.jsx';
 import Head from 'next/head';
 import { AiFillGithub } from 'react-icons/ai';
-import { useAccount, useConnect } from 'wagmi';
-import { useEffect } from 'react';
+import { useAccount } from 'wagmi';
 
 export default function Home() {
 	const { address, isConnected: connected } = useAccount();
-
-	useEffect(() => {}, []);
 
 	return (
 		<div>
@@ -18,7 +15,6 @@ export default function Home() {
 			</Head>
 
 			<main className=''>
-				<Nav address={address} />
 				<section>
 					<h1
 						className='text-center text-5xl font-bold
