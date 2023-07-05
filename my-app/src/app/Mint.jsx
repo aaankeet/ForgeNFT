@@ -50,13 +50,15 @@ const Mint = ({ address }) => {
 		args: [address],
 	});
 
-	const currTime = new Date();
-	const unixTime = Math.floor(currTime.getTime() / 1000);
+	let currTime = new Date();
+	let unixTime = Math.floor(currTime.getTime() / 1000);
 
-	const isCooldown = userCooldown.toString() + 86400 > unixTime;
+	const isCooldown =
+		parseInt(userCooldown.toString()) + 86400 > unixTime ? true : false;
 
+	console.log(`User Cooldown: `, parseInt(userCooldown?.toString()));
 	console.log(`Current Time`, unixTime);
-	console.log(`User Cooldown`, isCooldown);
+	console.log(`Cooldown ?`, isCooldown);
 
 	const { data: userBalance, isFetched } = useContractReads({
 		contracts: [
