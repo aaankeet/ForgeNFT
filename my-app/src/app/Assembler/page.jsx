@@ -1,4 +1,17 @@
+import { useContractWrite } from 'wagmi';
+import { assemblerAbi, assemblerAddress } from '../constants';
+
 export default function Assembler() {
+	const {
+		write: forge,
+		isSuccess,
+		isLoading,
+	} = useContractWrite({
+		address: assemblerAddress,
+		abi: assemblerAbi,
+		functionName: 'forge',
+	});
+
 	return (
 		<div>
 			<h1 className='text-center text-5xl font-bold bg-gradient-to-r from-yellow-200 to-pink-300 via-orange-200 text-transparent bg-clip-text py-2 '>
