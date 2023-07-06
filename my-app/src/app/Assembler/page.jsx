@@ -1,7 +1,9 @@
-import { useContractWrite } from 'wagmi';
+import { useContractRead, useContractWrite } from 'wagmi';
 import { assemblerAbi, assemblerAddress } from '../constants';
+import { useState } from 'react';
 
 export default function Assembler() {
+	const [forgeCost, setForgeCost] = useState(0);
 	const {
 		write: forge,
 		isSuccess,
@@ -10,6 +12,12 @@ export default function Assembler() {
 		address: assemblerAddress,
 		abi: assemblerAbi,
 		functionName: 'forge',
+	});
+
+	const { data: cost, isFetched } = useContractRead({
+		address: assemblerAddress,
+		abi: assemblerAbi,
+		functionName: 'FORGE_COST',
 	});
 
 	return (
