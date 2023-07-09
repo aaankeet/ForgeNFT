@@ -55,7 +55,7 @@ const Mint = ({ address }) => {
 	let unixTime = Math.floor(currTime.getTime() / 1000);
 
 	const isCooldown =
-		parseInt(userCooldown.toString()) + 86400 > unixTime ? true : false;
+		parseInt(userCooldown?.toString()) + 86400 > unixTime ? true : false;
 
 	console.log(`User Cooldown: `, parseInt(userCooldown?.toString()));
 	console.log(`Current Time`, unixTime);

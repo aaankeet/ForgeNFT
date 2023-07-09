@@ -1,9 +1,15 @@
 'use client';
+import { AiFillLeftCircle, AiFillRightCircle } from 'react-icons/ai';
+import { parseEther } from 'viem';
+import { useState } from 'react';
+import { ethers } from 'ethers';
+import Image from 'next/image';
 import {
 	useContractRead,
 	useContractWrite,
 	useContractReads,
 	useAccount,
+	useWaitForTransaction,
 } from 'wagmi';
 import {
 	assemblerAbi,
@@ -11,57 +17,62 @@ import {
 	materialsAddress,
 	materialsAbi,
 } from '../constants';
-import { AiFillLeftCircle, AiFillRightCircle } from 'react-icons/ai';
-import { useState } from 'react';
-import { ethers } from 'ethers';
-import Image from 'next/image';
-import basicSword from '../../../public/basicSword.png';
-import basicShield from '../../../public/basicShield.png';
-import stoneHammer from '../../../public/stoneHammer.png';
-import metalSword from '../../../public/metalSword.png';
-import metalArmor from '../../../public/metalArmor.png';
-import katana from '../../../public/katana.png';
-import goldArmor from '../../../public/goldArmor.jpg';
+import { req, rawMaterials, images } from './req';
 
 const Assembler = () => {
 	const { address, isConnected } = useAccount();
 
 	const [currentIndex, setCurrentIndex] = useState(0);
 	const [itemId, setItemId] = useState(0);
+	const [requirements, setRequirements] = useState([2, 0, 1, 0]);
 
-	const items = [
-		'Basic-Sword',
-		'Basic-Shield',
-		'Stone-Hammer',
-		'Metal-Sword',
-		'Metal-Armor',
-		'Katana',
-		'Gold-Armor',
-	];
-	const rawMaterials = ['1. Wood', '2. Stone', '3. Iron', '4. Gold'];
+	console.log(requirements);
 
-	const [isForging, setIsForging] = useState(false);
+	const {
+		data: approveData,
+		write: approve,
+		isLoading: isApproveLoading,
+	} = useContractWrite({
+		address: materialsAddress,
+		abi: materialsAbi,
+		functionName: 'setApprovalForAll',
+		args: [materialsAddress, true],
+	});
 
-	const images = [
-		basicSword,
-		basicShield,
-		stoneHammer,
-		metalSword,
-		metalArmor,
-		katana,
-		goldArmor,
-	];
+	console.log(approveData?.hash);
+	const {
+		data,
+		isSuccess: isApproveTxSuccess,
+		isLoading: isApproveTxLoading,
+	} = useWaitForTransaction({
+		chainId: 11155111,
+		hash: approveData?.hash,
+		enabled: false,
+		staleTime: 10_000,
+	});
 
-	const [forgeCost, setForgeCost] = useState(0);
+	const { data: isApproved, isFetched: isApprovedFetched } = useContractRead({
+		address: materialsAddress,
+		abi: materialsAbi,
+		functionName: 'isApprovedForAll',
+		args: [address, materialsAddress],
+	});
+
+	console.log(isApproved);
+
 	const {
 		write: forge,
-		isSuccess,
-		isLoading,
+		isSuccess: isForgeSuccess,
+		isLoading: isForgeLoading,
 	} = useContractWrite({
 		address: assemblerAddress,
 		abi: assemblerAbi,
 		functionName: 'forge',
+		args: [currentIndex + 4],
+		value: parseEther('0.05'),
+		// gas: 300_000n,
 	});
+	console.log(`Current Id: ${currentIndex + 4}`);
 
 	const { data: cost, isFetched } = useContractRead({
 		address: assemblerAddress,
@@ -73,45 +84,27 @@ const Assembler = () => {
 		contracts: [
 			{
 				address: materialsAddress,
-				abi: materialsAddress,
+				abi: materialsAbi,
 				functionName: 'balanceOf',
-				args: [address, 4],
+				args: [address, 0],
 			},
 			{
 				address: materialsAddress,
 				abi: materialsAbi,
 				functionName: 'balanceOf',
-				args: [address, 5],
+				args: [address, 1],
 			},
 			{
 				address: materialsAddress,
 				abi: materialsAbi,
 				functionName: 'balanceOf',
-				args: [address, 6],
+				args: [address, 2],
 			},
 			{
 				address: materialsAddress,
 				abi: materialsAbi,
 				functionName: 'balanceOf',
-				args: [address, 7],
-			},
-			{
-				address: materialsAddress,
-				abi: materialsAbi,
-				functionName: 'balanceOf',
-				args: [address, 8],
-			},
-			{
-				address: materialsAddress,
-				abi: materialsAbi,
-				functionName: 'balanceOf',
-				args: [address, 9],
-			},
-			{
-				address: materialsAddress,
-				abi: materialsAbi,
-				functionName: 'balanceOf',
-				args: [address, 10],
+				args: [address, 3],
 			},
 		],
 		onError(error) {
@@ -124,12 +117,14 @@ const Assembler = () => {
 			prevIndex === 0 ? images.length - 1 : prevIndex - 1
 		);
 		setItemId(currentIndex - 1);
+		setRequirements(req[currentIndex - 1]);
 	};
 	const moveRight = () => {
 		setCurrentIndex((prevIndex) =>
 			prevIndex === images.length - 1 ? 0 : prevIndex + 1
 		);
 		setItemId(currentIndex + 1);
+		setRequirements(req[currentIndex + 1]);
 	};
 
 	const getItem = () => {
@@ -203,40 +198,96 @@ const Assembler = () => {
 					{getItem()}
 				</h1>
 			</div>
-			<h1 className='text-white text-center text-xl font-bold py-3'>
-				Forge Cost: {ethers.formatEther(cost?.toString(), 18)} ETH
-			</h1>
 
 			<div>
-				{address && userBalance && balanceFetched && (
-					<div className='flex justify-center pt-4'>
-						<table className='border-collapse  border-gray-300 '>
-							<tHead>
-								<tr>
-									<th className='text-zinc-400 text-2xl px-5'>
-										Requirements
-									</th>
-									<th className='text-zinc-400 text-2xl  px-5'>
-										Your Balance
-									</th>
-								</tr>
-							</tHead>
-							<tbody>
-								{rawMaterials.map((m, index) => (
-									<tr key={index + 1}>
-										<td className='text-gray-500 text-xl px-5'>
-											{m}
-										</td>
-										<td className='text-gray-500 text-xl px-5'>
-											{userBalance[
-												index
-											]?.result?.toString()}
-										</td>
-									</tr>
-								))}
-							</tbody>
-						</table>
+				{address ? (
+					<div>
+						<div className='flex justify-center'>
+							{!isApproved && (
+								<button
+									id='approve-btn'
+									disabled={
+										isApproveLoading || isApproveTxLoading
+									}
+									className='bg-red-500 rounded px-2 py-3 '
+									onClick={() => {
+										approve();
+									}}
+								>
+									{isApproveLoading || isApproveTxLoading
+										? 'Approving...'
+										: 'Approve'}
+								</button>
+							)}
+						</div>
+
+						<div className='flex items-center justify-center flex-col'>
+							{isApproved && (
+								<button
+									disabled={isForgeLoading}
+									className='bg-blue-600 rounded px-3 py-2.5 '
+									onClick={() => forge({})}
+								>
+									{isForgeLoading && 'Forging...'}
+									{!isForgeLoading && 'Forge'}
+								</button>
+							)}
+							<h1 className='text-white text-center text-xl font-bold py-3'>
+								Forge Cost:
+								{ethers.formatEther(cost?.toString(), 18)} ETH
+							</h1>
+						</div>
+
+						{!isApproved && (
+							<p className='text-red-400 text-center text-xl font-bold py-3'>
+								You need to approve the Assembler to forge your
+								materials. <br />
+							</p>
+						)}
+
+						<div>
+							{userBalance && balanceFetched && (
+								<div className='flex justify-center pt-4'>
+									<table className='border-collapse  border-gray-300 '>
+										<tHead>
+											<tr>
+												<th className='text-zinc-400 text-2xl px-5'>
+													Raw Materials
+												</th>
+												<th className='text-zinc-400 text-2xl  px-5'>
+													Your Balance
+												</th>
+												<th className='text-zinc-400 text-2xl  px-5'>
+													Requirements
+												</th>
+											</tr>
+										</tHead>
+										<tbody>
+											{rawMaterials.map((m, index) => (
+												<tr key={index + 1}>
+													<td className='text-gray-500 text-xl px-5'>
+														{m}
+													</td>
+													<td className='text-gray-500 text-xl px-5'>
+														{userBalance[
+															index
+														].result?.toString()}
+													</td>
+													<td className='text-gray-500 text-xl px-24'>
+														{requirements[index]}
+													</td>
+												</tr>
+											))}
+										</tbody>
+									</table>
+								</div>
+							)}
+						</div>
 					</div>
+				) : (
+					<h1 className='text-red-500 text-center text-xl font-bold py-3'>
+						Please Connect to the Wallet to forge your materials
+					</h1>
 				)}
 			</div>
 		</div>
