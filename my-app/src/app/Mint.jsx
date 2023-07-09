@@ -7,6 +7,7 @@ import wood from '../../public/wood.png';
 import stone from '../../public/stone.png';
 import iron from '../../public/iron.png';
 import gold from '../../public/gold.jpg';
+
 import {
 	useContractReads,
 	useContractWrite,
@@ -258,7 +259,7 @@ const Mint = ({ address }) => {
 										{m}
 									</td>
 									<td className='text-gray-500 text-xl px-5'>
-										{userBalance[index]?.result.toString()}
+										{userBalance[index]?.result?.toString()}
 									</td>
 								</tr>
 							))}
